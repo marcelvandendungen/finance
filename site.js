@@ -6,10 +6,10 @@
         let categoriesSet = new Set();
 
         var transactions = await getTransactionData();
-        transactions.map(d => processTransaction(d));
+        transactions.map(d => processTransaction(d));   // calculate totals per month and fill categoriesSet
 
         const button = document.getElementById("refreshButton");
-        button.addEventListener("click", refresh);
+        button.addEventListener("click", async () => {await refresh()});
 
         let categories = Array.from(categoriesSet);
 
@@ -63,8 +63,6 @@
                 categoriesSet.delete(elem.srcElement.value);
             }
             recalc();
-            // chart.data.datasets[1].data[2] = 3456;
-            chart.update();
         }
 
         function addFilters(categories) {
@@ -114,14 +112,16 @@
                 if (categoriesSet.has(c)) {                 // if one of the categories is checked
                     let month = transaction.month;
                     expenses[month] += transaction.amount;  // add amount to expenses for that month
-                    console.log("adding " + transaction.amount + " to " + transaction.month + " with " + transaction.categories)
+                    // console.log("adding " + transaction.amount + " to " + transaction.month + " with " + transaction.categories)
                     return;
                 }
             }
         }
 
-        function refresh() {
-            chart.update();
+        async function refresh() {
+            let transactions = await getTransactionData();
+            transactions.map(d => processTransaction(d));
+            recalc();
         }
 
         async function getTransactionData() {

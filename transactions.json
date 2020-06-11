@@ -1,7 +1,7 @@
 [
     {
         "amount": 234.12,
-        "description": "something",
+        "description": "example",
         "month": 1,
         "categories": ["car", "gas"]
     },
