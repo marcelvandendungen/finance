@@ -144,4 +144,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         main(sys.argv[1])
     else:
-        main('2012.csv')
+        main('in/2012.csv')
