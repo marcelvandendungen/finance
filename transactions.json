@@ -1,42 +1,54 @@
 [
     {
-        "amount": 234.12,
+        "amount": -234.12,
         "description": "example",
         "month": 1,
         "categories": ["car", "gas"]
     },
     {
-        "amount": 24.20,
+        "amount": -24.20,
         "description": "something",
         "month": 2,
         "categories": ["groceries"]
     },
     {
-        "amount": 4.29,
+        "amount": 200.00,
+        "description": "payment",
+        "month": 2,
+        "categories": ["payment"]
+    },
+    {
+        "amount": -4.29,
         "description": "something",
         "month": 3,
         "categories": ["utilities"]
     },
     {
-        "amount": 34.12,
+        "amount": -34.12,
         "description": "something",
         "month": 4,
         "categories": ["Marcel", "lunch"]
     },
     {
-        "amount": 124.12,
+        "amount": -124.12,
         "description": "something",
         "month": 5,
         "categories": ["utilities"]
     },
     {
-        "amount": 45.12,
+        "amount": 312.00,
+        "description": "payment",
+        "month": 6,
+        "categories": ["payment"]
+    },
+    {
+        "amount": -45.12,
         "description": "something",
         "month": 6,
         "categories": ["car"]
     },
     {
-        "amount": 234.12,
+        "amount": -234.12,
         "description": "something",
         "month": 2,
         "categories": ["Ilse", "hobby"]

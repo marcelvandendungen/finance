@@ -37,9 +37,6 @@ def read_transactions(filename):
         csv_reader = csv.reader(csv_file, delimiter=',')
 
         for transaction in islice(map(Transaction._make, csv_reader), 1, None):
-            if transaction.type == 'CREDIT':
-                continue
-
             yield transaction
 
 
@@ -64,7 +61,7 @@ def main(argv):
             month = date_time_obj.month - 1
 
             transactions.append({
-                'amount': abs(float(result[2])),
+                'amount': float(result[2]),
                 'description': result[1],
                 'month': month,
                 'categories': result[3:]

@@ -92,11 +92,20 @@
         }
 
         function processTransaction(transaction) {
-            let month = transaction.month;
-            expenses[month] += transaction.amount;
+            processAmount(transaction.amount, transaction.month);
             transaction.categories.forEach(element => {
                 categoriesSet.add(element);
             });
+        }
+
+        function processAmount(amount, month) {
+            if (amount > 0) {
+                incomes[month] += amount;
+                // console.log("adding " + Math.abs(transaction.amount) + " to income of " + transaction.month + " with " + transaction.categories);
+            } else {
+                expenses[month] += Math.abs(amount);
+                // console.log("adding " + Math.abs(transaction.amount) + " to expenses of " + transaction.month + " with " + transaction.categories);
+        }
         }
 
         function recalc() {
@@ -110,9 +119,7 @@
         function calcExpenses(transaction) {
             for (let c of transaction.categories) {
                 if (categoriesSet.has(c)) {                 // if one of the categories is checked
-                    let month = transaction.month;
-                    expenses[month] += transaction.amount;  // add amount to expenses for that month
-                    // console.log("adding " + transaction.amount + " to " + transaction.month + " with " + transaction.categories)
+                    processAmount(transaction.amount, transaction.month);
                     return;
                 }
             }
