@@ -51,6 +51,11 @@
                                 beginAtZero: true
                             }
                         }]
+                    },
+                    onClick: function (e) {
+                        // debugger;
+                        var activeElement = chart.getElementAtEvent(e);
+                        console.log(activeElement[0]._model.label + ' ' + activeElement[0]._model.datasetLabel);
                     }
                 }
             });

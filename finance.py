@@ -1,13 +1,15 @@
 """Parse CSV files and gather statistics for home finances"""
 
 from collections import namedtuple
-from decimal import Decimal
+# from decimal import Decimal
 import csv
+import json
 import os
 import sys
 import datetime
 
 savings = 0
+transactions = []
 
 class Stats:
     """Keeps stats on financial transactions"""
@@ -58,6 +60,7 @@ def parse_date(date_string, *format_strings):
 
 def processRow(stats, values):
     date_time_obj = parse_date(values['date'], '%m/%d/%Y %H:%M:%S %p', '%m/%d/%Y %H:%M', '%m/%d/%Y')
+
     month = date_time_obj.month - 1
 
     # exclude transfers between checkings and savings accounts
@@ -66,6 +69,12 @@ def processRow(stats, values):
         savings -= values['amount']
     else:
         stats[month].process(values['type'], values['amount'], values['balance'])
+        transactions.append({
+            "amount": values['amount'],
+            "description": values['description'],
+            "month": month,
+            "categories": []
+        })
 
 def read_row_definition(row):
     """
@@ -88,13 +97,13 @@ def read_row(definitions, row):
     """
         Read values from the positions in the definitions
     """
-    amount = Decimal(row[definitions['amount']])
+    amount = float(row[definitions['amount']])
     ret = {
         'date': row[definitions['date']],
         'type': 'Debit' if amount < 0 else 'Credit',
         'amount': amount,
         'description': row[definitions['description']],
-        'balance': Decimal(row[definitions['balance']])
+        'balance': float(row[definitions['balance']])
         }
     return ret
 
@@ -126,6 +135,8 @@ def main(filename):
                                    values['balance'])
             count += 1
 
+    with open('transactions1.json', 'w') as json_file:
+        json_file.write(json.dumps(transactions))
 
     for stats in month_stats:
         print(stats)
@@ -144,4 +155,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         main(sys.argv[1])
     else:
-        main('in/2012.csv')
+        main('in/2017.csv')
