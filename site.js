@@ -137,9 +137,16 @@
         }
 
         async function getTransactionData() {
-            const result = await fetch('/transactions.json');
-            const json = await result.json();
-            return json;
+            let p = document.getElementById("inputFile")
+            if (p != null && p.value) {
+                const result = await fetch(p.value);
+                const json = await result.json();
+                return json;    
+            } {
+                const result = await fetch('/transactions.json');
+                const json = await result.json();
+                return json;
+            }
         }
     }
 )();
