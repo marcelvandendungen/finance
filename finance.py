@@ -135,7 +135,9 @@ def main(filename):
                                    values['balance'])
             count += 1
 
-    with open('transactions1.json', 'w') as json_file:
+    outname = filename.replace('.csv', '.json')
+    print('writing to: ', outname)
+    with open(outname, 'w') as json_file:
         json_file.write(json.dumps(transactions))
 
     for stats in month_stats:
