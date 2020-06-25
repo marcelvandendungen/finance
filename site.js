@@ -1,11 +1,13 @@
 (
     async () => {
+        const dataUrl = getTransactionUrl();
+
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         let incomes = new Array(12).fill(0);
         let expenses = new Array(12).fill(0);
         let categoriesSet = new Set();
 
-        var transactions = await getTransactionData();
+        var transactions = await getTransactionData(dataUrl);
         transactions.map(d => processTransaction(d));   // calculate totals per month and fill categoriesSet
 
         const button = document.getElementById("refreshButton");
@@ -48,6 +50,7 @@
                     scales: {
                         yAxes: [{
                             ticks: {
+                                suggestedMax: 30000,
                                 beginAtZero: true
                             }
                         }]
@@ -59,6 +62,13 @@
                     }
                 }
             });
+        }
+
+        function getTransactionUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const filename = urlParams.get('file');
+            const path = filename ? "/in/" + filename + ".json" : "/transactions.json";
+            return path;
         }
 
         function toggleCheckbox(elem) {
@@ -131,22 +141,21 @@
         }
 
         async function refresh() {
-            let transactions = await getTransactionData();
+            let p = document.getElementById("inputFile");
+            let path = p != null && p.value ? "/in/" + p.value + ".json" : "/transactions.json";
+            let transactions = await getTransactionData(path);
+            incomes = new Array(12).fill(0);
+            expenses = new Array(12).fill(0);
             transactions.map(d => processTransaction(d));
-            recalc();
+            chart.data.datasets[0].data = incomes;
+            chart.data.datasets[1].data = expenses;
+            chart.update();
         }
 
-        async function getTransactionData() {
-            let p = document.getElementById("inputFile")
-            if (p != null && p.value) {
-                const result = await fetch(p.value);
-                const json = await result.json();
-                return json;    
-            } {
-                const result = await fetch('/transactions.json');
-                const json = await result.json();
-                return json;
-            }
+        async function getTransactionData(path) {
+            const result = await fetch(path);
+            const json = await result.json();
+            return json;    
         }
     }
 )();
