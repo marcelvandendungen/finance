@@ -3,54 +3,63 @@
         "amount": -234.12,
         "description": "example",
         "month": 1,
+        "reference": "1",
         "categories": ["car", "gas"]
     },
     {
         "amount": -24.20,
         "description": "something",
         "month": 2,
+        "reference": "2",
         "categories": ["groceries"]
     },
     {
         "amount": 200.00,
         "description": "payment",
         "month": 2,
+        "reference": "3",
         "categories": ["payment"]
     },
     {
         "amount": -4.29,
         "description": "something",
         "month": 3,
+        "reference": "4",
         "categories": ["utilities"]
     },
     {
         "amount": -34.12,
         "description": "something",
         "month": 4,
+        "reference": "5",
         "categories": ["Marcel", "lunch"]
     },
     {
         "amount": -124.12,
         "description": "something",
         "month": 5,
+        "reference": "6",
         "categories": ["utilities"]
     },
     {
         "amount": 312.00,
         "description": "payment",
         "month": 6,
+        "reference": "7",
         "categories": ["payment"]
     },
     {
         "amount": -45.12,
         "description": "something",
         "month": 6,
+        "reference": "8",
         "categories": ["car"]
     },
     {
         "amount": -234.12,
         "description": "something",
         "month": 2,
+        "reference": "9",
         "categories": ["Ilse", "hobby"]
     }
 ]

@@ -1,14 +1,12 @@
 (
     async () => {
-        const dataUrl = getTransactionUrl();
-
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        let incomes = new Array(12).fill(0);
-        let expenses = new Array(12).fill(0);
+        let [incomes, expenses] = resetDataArrays();
         let categoriesSet = new Set();
 
+        const dataUrl = getTransactionUrl();
         var transactions = await getTransactionData(dataUrl);
-        transactions.map(d => processTransaction(d));   // calculate totals per month and fill categoriesSet
+        transactions.map(d => processTransaction(d));   // calculates totals per month and fills categoriesSet
 
         const button = document.getElementById("refreshButton");
         button.addEventListener("click", async () => {await refresh()});
@@ -16,6 +14,9 @@
         let categories = Array.from(categoriesSet);
 
         addFilters(categories);
+        let table = new Tablesort(document.getElementById('transactions'));
+        let tbody = document.getElementById("tablebody");
+        refreshTransactionTable();
 
         const ctx = document.getElementById('myChart');
         const chart = createChart();
@@ -56,13 +57,43 @@
                         }]
                     },
                     onClick: function (e) {
-                        // debugger;
                         var activeElement = chart.getElementAtEvent(e);
                         console.log(activeElement[0]._model.label + ' ' + activeElement[0]._model.datasetLabel);
                     }
                 }
             });
         }
+
+        function resetDataArrays() {
+            return [new Array(12).fill(0), new Array(12).fill(0)];
+        }
+
+        function refreshTransactionTable() {
+            transactions.map(d => addToTransactionTable(d));
+            table.refresh();    
+        }
+
+        function addToTransactionTable(transaction) {
+            tbody.appendChild(createRow(transaction));
+        }
+
+        function createRow(transaction) {
+            let row = document.createElement('tr');
+            let cell = document.createElement('td');
+            cell.appendChild(createCheckbox(1, transaction.reference, toggleTransaction))
+            row.appendChild(cell);
+            cell = document.createElement('td');
+            cell.innerText = transaction.amount;
+            row.appendChild(cell);
+            cell = document.createElement('td');
+            cell.innerText = transaction.description;
+            row.appendChild(cell);
+            cell = document.createElement('td');
+            cell.innerText = transaction.categories;
+            row.appendChild(cell);
+            return row;
+        }
+
 
         function getTransactionUrl() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -71,7 +102,16 @@
             return path;
         }
 
-        function toggleCheckbox(elem) {
+        function toggleTransaction(elem) {
+            if (elem.srcElement.checked) {
+                categoriesSet.add(elem.srcElement.value);
+            } else {
+                categoriesSet.delete(elem.srcElement.value);
+            }
+            recalc();
+        }
+
+        function toggleCategory(elem) {
             if (elem.srcElement.checked) {
                 categoriesSet.add(elem.srcElement.value);
             } else {
@@ -84,18 +124,18 @@
             let parentElement = document.getElementById("filters");
             for (var count in categories)
             {
-                parentElement.appendChild(createCheckbox(count, categories[count]));
+                parentElement.appendChild(createCheckbox(count, categories[count], toggleCategory));
                 parentElement.appendChild(createLabel(count, categories[count]))
             }
         }
 
-        function createCheckbox(count, category) {
+        function createCheckbox(count, category, handler) {
             let newCheckBox = document.createElement('input');
             newCheckBox.type = 'checkbox';
             newCheckBox.id = 'cat' + count;
             newCheckBox.value = category;
             newCheckBox.checked = true;
-            newCheckBox.addEventListener('click', toggleCheckbox);
+            newCheckBox.addEventListener('click', handler);
             return newCheckBox;
         }
 
@@ -120,15 +160,19 @@
             } else {
                 expenses[month] += Math.abs(amount);
                 // console.log("adding " + Math.abs(transaction.amount) + " to expenses of " + transaction.month + " with " + transaction.categories);
+            }
         }
+
+        function refreshChart() {
+            chart.data.datasets[0].data = incomes;
+            chart.data.datasets[1].data = expenses;
+            chart.update();
         }
 
         function recalc() {
-            incomes = new Array(12).fill(0);
-            expenses = new Array(12).fill(0);
+            [incomes, expenses] = resetDataArrays();
             transactions.map(t => calcExpenses(t));
-            chart.data.datasets[1].data = expenses;
-            chart.update();
+            refreshChart();
         }
 
         function calcExpenses(transaction) {
@@ -143,13 +187,16 @@
         async function refresh() {
             let p = document.getElementById("inputFile");
             let path = p != null && p.value ? "/in/" + p.value + ".json" : "/transactions.json";
-            let transactions = await getTransactionData(path);
-            incomes = new Array(12).fill(0);
-            expenses = new Array(12).fill(0);
+
+            transactions = await getTransactionData(path);
+            [incomes, expenses] = resetDataArrays();
             transactions.map(d => processTransaction(d));
-            chart.data.datasets[0].data = incomes;
-            chart.data.datasets[1].data = expenses;
-            chart.update();
+
+            refreshChart();
+
+            tbody.innerHTML = '';
+            transactions.map(d => addToTransactionTable(d));
+            table.refresh();    
         }
 
         async function getTransactionData(path) {
