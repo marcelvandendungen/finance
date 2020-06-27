@@ -1,10 +1,12 @@
 """Parse CSV files and gather statistics for home finances"""
 
+from categories import categories
 from collections import namedtuple
 # from decimal import Decimal
 import csv
 import json
 import os
+import re
 import sys
 import datetime
 
@@ -59,7 +61,10 @@ def parse_date(date_string, *format_strings):
 
 
 def processRow(stats, values):
-    date_time_obj = parse_date(values['date'], '%m/%d/%Y %H:%M:%S %p', '%m/%d/%Y %H:%M', '%m/%d/%Y')
+    date_time_obj = parse_date(values['date'], '%m/%d/%Y %H:%M:%S %p', '%m/%d/%Y %H:%M', '%m/%d/%Y', '%m/%d/%y')
+
+    if date_time_obj.year < 2000:
+        date_time_obj.year += 2000
 
     month = date_time_obj.month - 1
 
@@ -72,9 +77,24 @@ def processRow(stats, values):
         transactions.append({
             "amount": values['amount'],
             "description": values['description'],
+            "reference": values['reference'],
             "month": month,
-            "categories": []
+            "categories": getCategories(values['description'])
         })
+
+
+def getCategories(description):
+    tokens = re.split('[ \*]+', description)
+    print(tokens)
+    key = tokens[0]
+    # for each word in the list
+    for idx, word in enumerate(tokens):
+        if idx != 0:
+            key += ' ' + word
+        if key in categories:
+            return categories[key]
+    return []
+
 
 def read_row_definition(row):
     """
@@ -90,6 +110,8 @@ def read_row_definition(row):
             definitions['amount'] = idx
         elif col == 'Balance':
             definitions['balance'] = idx
+        elif col == 'Reference Number' or col == 'Transaction_ID':
+            definitions['reference'] = idx
 
     return definitions
 
@@ -102,6 +124,7 @@ def read_row(definitions, row):
         'date': row[definitions['date']],
         'type': 'Debit' if amount < 0 else 'Credit',
         'amount': amount,
+        'reference': row[definitions['reference']],
         'description': row[definitions['description']],
         'balance': float(row[definitions['balance']])
         }
