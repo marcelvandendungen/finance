@@ -3,6 +3,7 @@
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         let [incomes, expenses] = resetDataArrays();
         let categoriesSet = new Set();
+        categoriesSet.add("other");     // add default category for every transaction without a category
 
         const dataUrl = getTransactionUrl();
         var transactions = await getTransactionData(dataUrl);
@@ -16,7 +17,7 @@
         addFilters(categories);
         let table = new Tablesort(document.getElementById('transactions'));
         let tbody = document.getElementById("tablebody");
-        refreshTransactionTable();
+        refreshTransactionTable(table);
 
         const ctx = document.getElementById('myChart');
         const chart = createChart();
@@ -68,7 +69,7 @@
             return [new Array(12).fill(0), new Array(12).fill(0)];
         }
 
-        function refreshTransactionTable() {
+        function refreshTransactionTable(table) {
             transactions.map(d => addToTransactionTable(d));
             table.refresh();    
         }
@@ -80,7 +81,7 @@
         function createRow(transaction) {
             let row = document.createElement('tr');
             let cell = document.createElement('td');
-            cell.appendChild(createCheckbox(1, transaction.reference, toggleTransaction))
+            cell.appendChild(createCheckbox(transaction.reference, transaction.selected, transaction.reference, toggleTransaction))
             row.appendChild(cell);
             cell = document.createElement('td');
             cell.innerText = transaction.amount;
@@ -103,12 +104,13 @@
         }
 
         function toggleTransaction(elem) {
-            if (elem.srcElement.checked) {
-                categoriesSet.add(elem.srcElement.value);
-            } else {
-                categoriesSet.delete(elem.srcElement.value);
+            // find in transactions the transaction with reference
+            // toggle its selected field
+            params = {
+                reference: elem.srcElement.value,
+                checked: elem.srcElement.checked
             }
-            recalc();
+            recalc(params);
         }
 
         function toggleCategory(elem) {
@@ -117,24 +119,29 @@
             } else {
                 categoriesSet.delete(elem.srcElement.value);
             }
-            recalc();
+            params = {
+                category: elem.srcElement.value,
+                checked: elem.srcElement.checked
+            }
+            recalc(params);
         }
 
         function addFilters(categories) {
             let parentElement = document.getElementById("filters");
+            parentElement.innerHTML = '';
             for (var count in categories)
             {
-                parentElement.appendChild(createCheckbox(count, categories[count], toggleCategory));
+                parentElement.appendChild(createCheckbox("cat" + count, true, categories[count], toggleCategory));
                 parentElement.appendChild(createLabel(count, categories[count]))
             }
         }
 
-        function createCheckbox(count, category, handler) {
+        function createCheckbox(id, checked, category, handler) {
             let newCheckBox = document.createElement('input');
             newCheckBox.type = 'checkbox';
-            newCheckBox.id = 'cat' + count;
+            newCheckBox.id = id;
             newCheckBox.value = category;
-            newCheckBox.checked = true;
+            newCheckBox.checked = checked;
             newCheckBox.addEventListener('click', handler);
             return newCheckBox;
         }
@@ -148,9 +155,13 @@
 
         function processTransaction(transaction) {
             processAmount(transaction.amount, transaction.month);
+            transaction.selected = true;
             transaction.categories.forEach(element => {
                 categoriesSet.add(element);
             });
+            if (!transaction.categories.length) {
+                transaction.categories = ["other"];
+            }
         }
 
         function processAmount(amount, month) {
@@ -169,18 +180,33 @@
             chart.update();
         }
 
-        function recalc() {
+        function recalc(parameters) {
             [incomes, expenses] = resetDataArrays();
-            transactions.map(t => calcExpenses(t));
+            if ('category' in parameters) {
+                transactions.map(function(t) { return calcExpenses(t, parameters.category, parameters.checked) });
+            } else {
+                transactions.map(function(t) { return calcExpenses2(t, parameters.reference, parameters.checked) });
+            }
             refreshChart();
         }
 
-        function calcExpenses(transaction) {
-            for (let c of transaction.categories) {
-                if (categoriesSet.has(c)) {                 // if one of the categories is checked
-                    processAmount(transaction.amount, transaction.month);
-                    return;
-                }
+        function calcExpenses(transaction, category, checked) {
+            if (category && transaction.categories.includes(category)) {
+                let e = document.getElementById(transaction.reference);
+                e.checked = checked;
+                transaction.selected = checked;
+            }
+            if (transaction.selected) {
+                processAmount(transaction.amount, transaction.month);
+            }
+        }
+
+        function calcExpenses2(transaction, reference, checked) {
+            if (transaction.reference == reference) {
+                transaction.selected = checked;
+            }
+            if (transaction.selected) {
+                processAmount(transaction.amount, transaction.month);
             }
         }
 
@@ -188,15 +214,18 @@
             let p = document.getElementById("inputFile");
             let path = p != null && p.value ? "/in/" + p.value + ".json" : "/transactions.json";
 
+            categoriesSet = new Set();
+            categoriesSet.add("other")
             transactions = await getTransactionData(path);
             [incomes, expenses] = resetDataArrays();
             transactions.map(d => processTransaction(d));
 
+            categories = Array.from(categoriesSet);
+            addFilters(categories);
             refreshChart();
 
             tbody.innerHTML = '';
-            transactions.map(d => addToTransactionTable(d));
-            table.refresh();    
+            refreshTransactionTable(table)
         }
 
         async function getTransactionData(path) {
