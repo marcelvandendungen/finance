@@ -1,4 +1,6 @@
 import {createChart, refreshChart} from './barchart.js';
+import {refreshTransactionTable} from './transactiontable.js';
+import {createCheckbox, createLabel} from './dom.js';
 
 (
     async () => {
@@ -10,15 +12,14 @@ import {createChart, refreshChart} from './barchart.js';
         var transactions = await getTransactionData(dataUrl);
         transactions.map(d => processTransaction(d));   // calculates totals per month and fills categoriesSet
 
+        let categories = Array.from(categoriesSet);
+        addFilters(categories);
+
         const button = document.getElementById("refreshButton");
         button.addEventListener("click", async () => {await refresh()});
 
-        let categories = Array.from(categoriesSet);
-
-        addFilters(categories);
         let table = new Tablesort(document.getElementById('transactions'));
-        let tbody = document.getElementById("tablebody");
-        refreshTransactionTable(table);
+        refreshTransactionTable(transactions, table, toggleTransaction, createCheckbox);
 
         const ctx = document.getElementById('myChart');
         createChart(ctx, incomes, expenses);
@@ -26,33 +27,6 @@ import {createChart, refreshChart} from './barchart.js';
         function resetDataArrays() {
             return [new Array(12).fill(0), new Array(12).fill(0)];
         }
-
-        function refreshTransactionTable(table) {
-            transactions.map(d => addToTransactionTable(d));
-            table.refresh();    
-        }
-
-        function addToTransactionTable(transaction) {
-            tbody.appendChild(createRow(transaction));
-        }
-
-        function createRow(transaction) {
-            let row = document.createElement('tr');
-            let cell = document.createElement('td');
-            cell.appendChild(createCheckbox(transaction.reference, transaction.selected, transaction.reference, toggleTransaction))
-            row.appendChild(cell);
-            cell = document.createElement('td');
-            cell.innerText = transaction.amount;
-            row.appendChild(cell);
-            cell = document.createElement('td');
-            cell.innerText = transaction.description;
-            row.appendChild(cell);
-            cell = document.createElement('td');
-            cell.innerText = transaction.categories;
-            row.appendChild(cell);
-            return row;
-        }
-
 
         function getTransactionUrl() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -92,23 +66,6 @@ import {createChart, refreshChart} from './barchart.js';
                 parentElement.appendChild(createCheckbox("cat" + count, true, categories[count], toggleCategory));
                 parentElement.appendChild(createLabel(count, categories[count]))
             }
-        }
-
-        function createCheckbox(id, checked, category, handler) {
-            let newCheckBox = document.createElement('input');
-            newCheckBox.type = 'checkbox';
-            newCheckBox.id = id;
-            newCheckBox.value = category;
-            newCheckBox.checked = checked;
-            newCheckBox.addEventListener('click', handler);
-            return newCheckBox;
-        }
-
-        function createLabel(count, category) {
-            let newLabel = document.createElement("label");
-            newLabel.setAttribute('for', 'cat' + count);
-            newLabel.innerText = category;
-            return newLabel;
         }
 
         function processTransaction(transaction) {
@@ -175,9 +132,7 @@ import {createChart, refreshChart} from './barchart.js';
             categories = Array.from(categoriesSet);
             addFilters(categories);
             refreshChart(incomes, expenses);
-
-            tbody.innerHTML = '';
-            refreshTransactionTable(table)
+            refreshTransactionTable(transactions, table, toggleTransaction, createCheckbox)
         }
 
         async function getTransactionData(path) {
