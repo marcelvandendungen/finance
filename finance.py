@@ -2,7 +2,6 @@
 
 from categories import categories
 from collections import namedtuple
-# from decimal import Decimal
 import csv
 import json
 import os

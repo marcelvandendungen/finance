@@ -8,9 +8,7 @@ import {createCheckbox, createLabel} from './dom.js';
         let categoriesSet = new Set();
         categoriesSet.add("other");     // add default category for every transaction without a category
 
-        const dataUrl = getTransactionUrl();
-        var transactions = await getTransactionData(dataUrl);
-        transactions.map(d => processTransaction(d));   // calculates totals per month and fills categoriesSet
+        let transactions = await loadTransactions(getTransactionUrl());
 
         let categories = Array.from(categoriesSet);
         addFilters(categories);
@@ -21,11 +19,16 @@ import {createCheckbox, createLabel} from './dom.js';
         let table = new Tablesort(document.getElementById('transactions'));
         refreshTransactionTable(transactions, table, toggleTransaction, createCheckbox);
 
-        const ctx = document.getElementById('myChart');
-        createChart(ctx, incomes, expenses);
+        createChart(document.getElementById('myChart'), incomes, expenses);
 
         function resetDataArrays() {
             return [new Array(12).fill(0), new Array(12).fill(0)];
+        }
+
+        async function loadTransactions(dataUrl) {
+            let transactions = await getTransactionData(dataUrl);
+            transactions.map(d => processTransaction(d));   // calculates totals per month and fills categoriesSet
+            return transactions;
         }
 
         function getTransactionUrl() {
@@ -92,30 +95,36 @@ import {createCheckbox, createLabel} from './dom.js';
         function recalc(parameters) {
             [incomes, expenses] = resetDataArrays();
             if ('category' in parameters) {
-                transactions.map(function(t) { return calcExpenses(t, parameters.category, parameters.checked) });
+                transactions.map(function(t) {
+                    toggleCheckbox(t, parameters.category, parameters.checked);
+                    return calcExpenses(t, parameters.category, parameters.checked); 
+                });
             } else {
-                transactions.map(function(t) { return calcExpenses2(t, parameters.reference, parameters.checked) });
+                transactions.map(function(t) {
+                    selectTransaction(t, parameters.reference, parameters.checked);
+                    return calcExpenses(t, parameters.reference, parameters.checked); 
+                });
             }
             refreshChart(incomes, expenses);
         }
 
-        function calcExpenses(transaction, category, checked) {
+        function toggleCheckbox(transaction, category, checked) {
             if (category && transaction.categories.includes(category)) {
                 let e = document.getElementById(transaction.reference);
                 e.checked = checked;
                 transaction.selected = checked;
             }
+        }
+
+        function calcExpenses(transaction, category, checked) {
             if (transaction.selected) {
                 processAmount(transaction.amount, transaction.month);
             }
         }
 
-        function calcExpenses2(transaction, reference, checked) {
+        function selectTransaction(transaction, reference, checked) {
             if (transaction.reference == reference) {
                 transaction.selected = checked;
-            }
-            if (transaction.selected) {
-                processAmount(transaction.amount, transaction.month);
             }
         }
 
@@ -125,9 +134,9 @@ import {createCheckbox, createLabel} from './dom.js';
 
             categoriesSet = new Set();
             categoriesSet.add("other")
-            transactions = await getTransactionData(path);
             [incomes, expenses] = resetDataArrays();
-            transactions.map(d => processTransaction(d));
+            transactions = await loadTransactions(path);
+
 
             categories = Array.from(categoriesSet);
             addFilters(categories);
