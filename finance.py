@@ -19,6 +19,7 @@ class Stats:
         self.count = 0
         self.income = 0     # dollars in
         self.spending = 0   # dollars out
+        self.highest = 0
 
     def process(self, transaction_type, amount, balance):
         """Keeps statistics over incoming transactions"""
@@ -29,6 +30,8 @@ class Stats:
             self.income += amount
         if transaction_type == 'Debit':
             self.spending += amount
+        if balance > self.highest:
+            self.highest = balance
 
     def __repr__(self):
 
@@ -165,6 +168,7 @@ def main(filename):
     for stats in month_stats:
         print(stats)
     print(year_stats)
+    print('highest: ', year_stats.highest)
     global savings
     print('savings: ' + str(savings))
 
